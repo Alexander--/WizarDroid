@@ -14,6 +14,8 @@ import org.codepond.wizardroid.infrastructure.Subscriber;
 import org.codepond.wizardroid.infrastructure.events.StepCompletedEvent;
 import org.codepond.wizardroid.persistence.ContextManager;
 
+import java.util.List;
+
 /**
  * The engine of the Wizard. This class controls the flow of the wizard
  * and is using {@link ViewPager} under the hood. You would normally want to
@@ -21,7 +23,7 @@ import org.codepond.wizardroid.persistence.ContextManager;
  * via {@link org.codepond.wizardroid.WizardFragment#wizard} field. Use this
  * class only if you wish to create a custom WizardFragment to control the wizard.
  */
-public class Wizard implements Disposable, Subscriber {
+public class Wizard {
     /**
      * Interface for key wizard events. Implement this interface if you wish to create
      * a custom WizardFragment.
@@ -39,7 +41,7 @@ public class Wizard implements Disposable, Subscriber {
     }
 
     private static final String TAG = Wizard.class.getSimpleName();
-	private final WizardFlow wizardFlow;
+	private WizardFlow wizardFlow;
     private final ContextManager contextManager;
     private final WizardCallbacks callbacks;
     private final ViewPager mPager;
@@ -59,19 +61,20 @@ public class Wizard implements Disposable, Subscriber {
 	public Wizard(final WizardFlow wizardFlow,
                   final ContextManager contextManager,
                   final WizardCallbacks callbacks,
-                  final FragmentActivity activity) {
+                  final FragmentActivity activity,
+                  final FragmentManager fmanager) {
 		this.wizardFlow = wizardFlow;
         this.contextManager = contextManager;
         this.callbacks = callbacks;
         this.mPager = (ViewPager) activity.findViewById(R.id.step_container);
-        this.mFragmentManager = activity.getSupportFragmentManager();
+        this.mFragmentManager = fmanager;
 
         if (mPager == null) {
             throw new RuntimeException("Cannot initialize Wizard. View with ID: step_container not found!" +
                     " The hosting Activity/Fragment must have a ViewPager in its layout with ID: step_container");
         }
 
-        mPager.setAdapter(new WizardPagerAdapter(activity.getSupportFragmentManager()));
+        mPager.setAdapter(new WizardPagerAdapter(fmanager));
 
         backStackEntryCount = mFragmentManager.getBackStackEntryCount();
         mFragmentManager.addOnBackStackChangedListener(new OnBackStackChangedListener() {
@@ -142,29 +145,26 @@ public class Wizard implements Disposable, Subscriber {
 
             }
         });
-        Bus.getInstance().register(this, StepCompletedEvent.class);
 	}
 
-    @Override
-    public void dispose() {
-        Bus.getInstance().unregister(this);
+    public void setFlow(WizardFlow newFlow) {
+        this.wizardFlow = newFlow;
+        onChanged();
     }
 
-    @Override
-    public void receive(Object event) {
-        StepCompletedEvent stepCompletedEvent = (StepCompletedEvent) event;
-        onStepCompleted(stepCompletedEvent.isStepCompleted());
+    public void onChanged() {
+        mPager.getAdapter().notifyDataSetChanged();
+        //Refresh the UI
+        callbacks.onStepChanged();
     }
 
-    private void onStepCompleted(boolean isComplete) {
+    public void onStepCompleted(boolean isComplete) {
         int stepPosition = getCurrentStepPosition();
 
         //Check if the step is already marked as completed/incomplete
         if (wizardFlow.isStepCompleted(stepPosition) != isComplete) {
             wizardFlow.setStepCompleted(stepPosition, isComplete);
-            mPager.getAdapter().notifyDataSetChanged();
-            //Refresh the UI
-            callbacks.onStepChanged();
+            onChanged();
         }
     }
 

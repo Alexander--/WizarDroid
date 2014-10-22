@@ -45,40 +45,11 @@ public abstract class WizardStep extends Fragment {
      * @param isStepCompleted true if this step is completed, false if it's incomplete
      */
     public final void notifyCompleted(boolean isStepCompleted) {
-        Bus.getInstance().post(new StepCompletedEvent(isStepCompleted));
+        getWizard().onStepCompleted(isStepCompleted);
     }
 
-    /**
-     * IMPORTANT: This method is overridden to bind the wizard context to the step's fields.
-     * Make sure to call super.onAttach(activity), if you override this method in your step class.
-     */
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        Bundle args = getArguments();
-        if (args != null) {
-            bindFields(args);
-        }
-    }
-
-    private void bindFields(Bundle args) {
-        //Scan the step for fields annotated with @ContextVariable
-        //and bind value if found in step's arguments
-        Field[] fields = this.getClass().getDeclaredFields();
-        for (Field field : fields) {
-            if (field.getAnnotation(ContextVariable.class) != null && args.containsKey(field.getName())) {
-                field.setAccessible(true);
-                try {
-                    if (field.getType() == Date.class) {
-                        field.set(this, new Date(args.getLong(field.getName())));
-                    }
-                    else {
-                        field.set(this, args.get(field.getName()));
-                    }
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+    protected Wizard getWizard() {
+        final WizardFragment basicWizard = (WizardFragment) getParentFragment();
+        return basicWizard.getWizard();
     }
 }

@@ -3,6 +3,7 @@ package org.codepond.wizardroid;
 import android.os.Bundle;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -43,9 +44,9 @@ public class WizardFlow {
 
     }
 
-    private final List<StepMetaData> steps;
+    final LinkedList<StepMetaData> steps;
 
-	private WizardFlow(List<StepMetaData> steps) {
+	private WizardFlow(LinkedList<StepMetaData> steps) {
 		this.steps = steps;
 	}
 
@@ -120,13 +121,13 @@ public class WizardFlow {
 	 */
 	public static class Builder {
 
-        private List<StepMetaData> wizardSteps;
+        private LinkedList<StepMetaData> wizardSteps;
 
         /**
 		 * Construct a WizardFlow.Builder
 		 */
 		public Builder() {
-			wizardSteps = new ArrayList<StepMetaData>();
+			wizardSteps = new LinkedList<>();
 		}
 		
 		/**
