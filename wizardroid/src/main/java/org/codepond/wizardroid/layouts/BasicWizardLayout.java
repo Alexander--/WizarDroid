@@ -7,6 +7,8 @@ import android.widget.Button;
 
 import org.codepond.wizardroid.R;
 import org.codepond.wizardroid.WizardFragment;
+import org.codepond.wizardroid.persistence.ContextManager;
+import org.codepond.wizardroid.persistence.ContextManagerImpl;
 
 /**
  * Basic Wizard UI class with built-in layout.
@@ -30,12 +32,21 @@ public abstract class BasicWizardLayout extends WizardFragment implements View.O
     private String backButtonText;
 
     /**
+     * @param contextManager {@link ContextManager}, used to persist fragment's variables
+     */
+    public BasicWizardLayout(ContextManager contextManager) {
+        super(contextManager);
+    }
+
+    /**
      * Empty constructor for Fragment
      * You must have an empty constructor according to {@link #Fragment} documentation
+     * Created fragment used default Reflection-based {@link ContextManager}
      */
     public BasicWizardLayout() {
-        super();
+        super(new ContextManagerImpl());
     }
+
     /**
      * Setting the layout for this basic wizard layout and hooking up wizard controls to their
      * OnClickListeners.

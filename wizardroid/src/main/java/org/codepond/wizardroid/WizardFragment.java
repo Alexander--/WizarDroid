@@ -1,12 +1,17 @@
 package org.codepond.wizardroid;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import org.codepond.wizardroid.persistence.ContextManager;
 import org.codepond.wizardroid.persistence.ContextManagerImpl;
+
+import java.util.List;
 
 /**
  * Base class for fragments that want to implement step-by-step wizard functionality.
@@ -28,10 +33,6 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
 
     protected Wizard wizard;
 
-    public WizardFragment() {
-
-    }
-
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -46,8 +47,6 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        //TODO: get rid of this dependency
-        contextManager = new ContextManagerImpl();
         if (savedInstanceState != null) {
             flow.loadFlow(savedInstanceState);
             //Load pre-saved wizard context
@@ -57,10 +56,57 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
             //Initialize wizard context
             contextManager.setContext(new Bundle());
         }
-        wizard = new Wizard(flow, contextManager, this, this.getActivity());
+        wizard = new Wizard(flow, contextManager, this, getActivity(), getChildFragmentManager());
         //Persist hosting activity/fragment fields to wizard context enabling easy data transfer between
         //wizard host and the steps
         contextManager.persistStepContext(this);
+    }
+
+    /**
+     * @param contextManager {@link ContextManager}, responsible for persisting variable values between steps
+     */
+    public WizardFragment(ContextManager contextManager) {
+        this.contextManager = contextManager;
+    }
+
+    /**
+     * Default implementation hides keyboard
+     */
+    @Override
+    public void onStepChanged() {
+        // in order to hide software input method we need to authorize with window token from focused window
+        // this code relies on (somewhat fragile) assumption, that the only window, that can hold
+        // software keyboard focus during fragment switch, one with fragment itself.
+        final InputMethodManager mgr = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+
+        View focusedWindowChild = wizard.getCurrentStep().getView();
+        if (focusedWindowChild == null)
+            focusedWindowChild = getActivity().getCurrentFocus();
+        if (focusedWindowChild == null)
+            focusedWindowChild = new View(getActivity());
+        mgr.hideSoftInputFromWindow(focusedWindowChild.getWindowToken(), 0);
+    }
+
+    /**
+     * @return {@link Wizard}, associated with this fragment. Children fragments should not need to
+     * access it directly, unless certain degree of automation is needed.
+     */
+    Wizard getWizard() {
+        return wizard;
+    }
+
+    public void addStep(Class<? extends WizardStep> step) {
+        onStepChanged();
+
+        WizardFlow.Builder builder = new WizardFlow.Builder();
+        for (WizardFlow.StepMetaData i:flow.steps) {
+            builder = builder.addStep(i.getStepClass());
+        }
+        builder.addStep(step);
+
+        flow = builder.create();
+
+        wizard.onChanged();
     }
 
     @Override
@@ -83,12 +129,4 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
 	 * Set up the Wizard's flow. Use {@link WizardFlow.Builder} to create the Wizard's flow.
 	 */
 	public abstract WizardFlow onSetup();
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        wizard.dispose();
-    }
-
-
 }
