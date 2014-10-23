@@ -8,13 +8,9 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.ViewGroup;
 
-import org.codepond.wizardroid.infrastructure.Bus;
-import org.codepond.wizardroid.infrastructure.Disposable;
-import org.codepond.wizardroid.infrastructure.Subscriber;
-import org.codepond.wizardroid.infrastructure.events.StepCompletedEvent;
 import org.codepond.wizardroid.persistence.ContextManager;
 
-import java.util.List;
+import java.util.Iterator;
 
 /**
  * The engine of the Wizard. This class controls the flow of the wizard
@@ -147,6 +143,19 @@ public class Wizard {
         });
 	}
 
+    public void addStep(Class<? extends WizardStep> stepClass){
+        wizardFlow.steps.add(new WizardFlow.StepMetaData(true, stepClass));
+        onChanged();
+    }
+
+    public void removeSteps(){
+        Iterator<WizardFlow.StepMetaData> iterator = wizardFlow.steps.descendingIterator();
+        WizardFlow.StepMetaData step;
+        while (!(step = iterator.next()).getStepClass().equals(((WizardPagerAdapter) mPager.getAdapter()).getPrimaryItem().getClass()))
+            wizardFlow.steps.descendingIterator().remove();
+        onChanged();
+    }
+
     public void setFlow(WizardFlow newFlow) {
         this.wizardFlow = newFlow;
         onChanged();
@@ -211,7 +220,7 @@ public class Wizard {
             callbacks.onStepChanged();
         }
 	}
-	
+
 	/**
 	 * Sets the current step of the wizard
 	 * @param stepPosition the position of the step within the WizardFlow
@@ -219,7 +228,7 @@ public class Wizard {
 	public void setCurrentStep(int stepPosition) {
         mPager.setCurrentItem(stepPosition);
 	}
-	
+
 	/**
 	 * Gets the current step position
 	 * @return integer representing the position of the step in the WizardFlow
@@ -227,7 +236,7 @@ public class Wizard {
     public int getCurrentStepPosition() {
 		return mPager.getCurrentItem();
 	}
-	
+
 	/**
 	 * Gets the current step
 	 * @return WizardStep the current WizardStep instance
@@ -235,7 +244,7 @@ public class Wizard {
     public WizardStep getCurrentStep() {
         return ((WizardPagerAdapter)mPager.getAdapter()).getPrimaryItem();
 	}
-	
+
 	/**
 	 * Checks if the current step is the last step in the Wizard
 	 * @return boolean representing the result of the check
@@ -243,7 +252,7 @@ public class Wizard {
     public boolean isLastStep() {
 		return mPager.getCurrentItem() == wizardFlow.getStepsCount() - 1;
 	}
-	
+
 	/**
 	 * Checks if the step is the first step in the Wizard
 	 * @return boolean representing the result of the check

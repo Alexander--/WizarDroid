@@ -15,13 +15,13 @@ public class WizardFlow {
      * This class wraps WizardStep to provide additional meta data which is persisted separately
      * as part of the wizard flow.
      */
-    public static class StepMetaData {
+    static class StepMetaData {
         private boolean completed;
         private boolean required;
 
         private Class<? extends WizardStep> stepClass;
 
-        private StepMetaData(boolean isRequired, Class<? extends WizardStep> stepClass) {
+        StepMetaData(boolean isRequired, Class<? extends WizardStep> stepClass) {
             this.required = isRequired;
             this.stepClass = stepClass;
         }
