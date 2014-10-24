@@ -1,14 +1,11 @@
 package org.codepond.wizardroid;
 
-import android.support.v4.app.*;
-import android.support.v4.app.FragmentManager.OnBackStackChangedListener;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
-import android.view.ViewGroup;
 
 import org.codepond.wizardroid.persistence.ContextManager;
-
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * The engine of the Wizard. This class controls the flow of the wizard
@@ -43,7 +40,7 @@ public class Wizard {
     private boolean fingerSlide;
     private int backStackEntryCount;
 
-    private int position;
+    private int position = -1;
     private WizardStep stepStepStep;
 
 
@@ -120,7 +117,6 @@ public class Wizard {
             }
             else {
                 setCurrentStep(getCurrentStepPosition() + 1);
-
                 //Notify the hosting Fragment/Activity that the step has changed so it might want to update the controls accordingly
                 callbacks.onStepChanged();
             }
@@ -136,9 +132,8 @@ public class Wizard {
             //Check if the user dragged the page or pressed a button.
             //If the page was dragged then the ViewPager will handle the current step.
             //Otherwise, set the current step programmatically.
-            if (!fingerSlide) {
-                setCurrentStep(getCurrentStepPosition() - 1);
-            }
+            setCurrentStep(getCurrentStepPosition() - 1);
+
             //Notify the hosting Fragment/Activity that the step has changed so it might want to update the controls accordingly
             callbacks.onStepChanged();
         }
@@ -149,14 +144,22 @@ public class Wizard {
 	 * @param stepPosition the position of the step within the WizardFlow
 	 */
 	public void setCurrentStep(int stepPosition) {
+        int fragmentTransactionAnimation = stepPosition > position ? FragmentTransaction.TRANSIT_FRAGMENT_OPEN : FragmentTransaction.TRANSIT_FRAGMENT_CLOSE;
         try {
             this.position = stepPosition;
+            if (position != -1 && stepStepStep != null)
+                contextManager.persistStepContext(stepStepStep);
+
             stepStepStep = wizardFlow.steps.get(position).getStepClass().newInstance();
+            contextManager.loadStepContext(stepStepStep);
+
             mFragmentManager.beginTransaction()
-                    .replace(android.R.id.content, stepStepStep)
-                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .replace(R.id.step_container, stepStepStep)
+                    .setTransition(fragmentTransactionAnimation)
                     .commit();
             mFragmentManager.executePendingTransactions();
+
+
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {

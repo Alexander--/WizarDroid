@@ -5,13 +5,10 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
-
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
-import org.codepond.wizardroid.persistence.ContextManager;
-import org.codepond.wizardroid.persistence.ContextManagerImpl;
 
-import java.util.List;
+import org.codepond.wizardroid.persistence.ContextManager;
 
 /**
  * Base class for fragments that want to implement step-by-step wizard functionality.
@@ -58,11 +55,13 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
             contextManager.setContext(new Bundle());
         }
 
-        wizard = new Wizard(flow, contextManager, this, getActivity(), getChildFragmentManager());
+        contextManager.persistStepContext(this);
 
+        wizard = new Wizard(flow, contextManager, this, getActivity(), getChildFragmentManager());
+        wizard.setCurrentStep(0);
         //Persist hosting activity/fragment fields to wizard context enabling easy data transfer between
         //wizard host and the steps
-        contextManager.persistStepContext(this);
+
     }
 
     /**
