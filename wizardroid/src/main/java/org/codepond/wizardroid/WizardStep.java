@@ -1,15 +1,6 @@
 package org.codepond.wizardroid;
 
-import android.app.Activity;
-import android.os.Bundle;
 import android.support.v4.app.Fragment;
-
-import org.codepond.wizardroid.infrastructure.Bus;
-import org.codepond.wizardroid.infrastructure.events.StepCompletedEvent;
-import org.codepond.wizardroid.persistence.ContextVariable;
-
-import java.lang.reflect.Field;
-import java.util.Date;
 
 /**
  * Base class for a wizard's step. Extend this class to create a step and override {@link #onExit(int)}

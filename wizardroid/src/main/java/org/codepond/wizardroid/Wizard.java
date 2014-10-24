@@ -8,12 +8,9 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.ViewGroup;
 
-import org.codepond.wizardroid.infrastructure.Bus;
-import org.codepond.wizardroid.infrastructure.Disposable;
-import org.codepond.wizardroid.infrastructure.Subscriber;
-import org.codepond.wizardroid.infrastructure.events.StepCompletedEvent;
 import org.codepond.wizardroid.persistence.ContextManager;
 
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -147,15 +144,32 @@ public class Wizard {
         });
 	}
 
-    public void setFlow(WizardFlow newFlow) {
-        this.wizardFlow = newFlow;
-        onChanged();
+    public void addStep(Class<? extends WizardStep> step, boolean required) {
+        final WizardFlow.StepMetaData metadata = new WizardFlow.StepMetaData(required, step);
+        if (!wizardFlow.steps.contains(metadata))
+            wizardFlow.steps.add(metadata);
+    }
+
+    public void retract() {
+        final Class<? extends WizardStep> currentActive =
+                ((WizardPagerAdapter)mPager.getAdapter()).getPrimaryItem().getClass();
+
+        retract(currentActive);
+    }
+
+    public void retract(Class<? extends WizardStep> step) {
+        final Iterator<WizardFlow.StepMetaData> iterator = wizardFlow.steps.descendingIterator();
+
+        WizardFlow.StepMetaData next;
+        while(!(step.equals((next = iterator.next()).getStepClass())))
+            wizardFlow.steps.remove(next);
     }
 
     public void onChanged() {
-        mPager.getAdapter().notifyDataSetChanged();
         //Refresh the UI
         callbacks.onStepChanged();
+
+        mPager.getAdapter().notifyDataSetChanged();
     }
 
     public void onStepCompleted(boolean isComplete) {

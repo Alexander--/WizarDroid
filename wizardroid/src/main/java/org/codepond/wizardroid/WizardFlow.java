@@ -2,9 +2,7 @@ package org.codepond.wizardroid;
 
 import android.os.Bundle;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * WizardFlow holds information regarding the wizard's steps and flow.
@@ -15,13 +13,13 @@ public class WizardFlow {
      * This class wraps WizardStep to provide additional meta data which is persisted separately
      * as part of the wizard flow.
      */
-    public static class StepMetaData {
+    static class StepMetaData {
         private boolean completed;
         private boolean required;
 
         private Class<? extends WizardStep> stepClass;
 
-        private StepMetaData(boolean isRequired, Class<? extends WizardStep> stepClass) {
+        StepMetaData(boolean isRequired, Class<? extends WizardStep> stepClass) {
             this.required = isRequired;
             this.stepClass = stepClass;
         }
@@ -42,6 +40,17 @@ public class WizardFlow {
             return stepClass;
         }
 
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(new Object[] { stepClass, required });
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof StepMetaData
+                    && ((StepMetaData) o).getStepClass().equals(stepClass)
+                    && ((StepMetaData) o).isRequired() == required;
+        }
     }
 
     final LinkedList<StepMetaData> steps;

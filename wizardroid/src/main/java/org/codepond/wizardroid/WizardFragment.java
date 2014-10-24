@@ -47,6 +47,7 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
         if (savedInstanceState != null) {
             flow.loadFlow(savedInstanceState);
             //Load pre-saved wizard context
@@ -56,7 +57,9 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
             //Initialize wizard context
             contextManager.setContext(new Bundle());
         }
+
         wizard = new Wizard(flow, contextManager, this, getActivity(), getChildFragmentManager());
+
         //Persist hosting activity/fragment fields to wizard context enabling easy data transfer between
         //wizard host and the steps
         contextManager.persistStepContext(this);
@@ -93,20 +96,6 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
      */
     Wizard getWizard() {
         return wizard;
-    }
-
-    public void addStep(Class<? extends WizardStep> step) {
-        onStepChanged();
-
-        WizardFlow.Builder builder = new WizardFlow.Builder();
-        for (WizardFlow.StepMetaData i:flow.steps) {
-            builder = builder.addStep(i.getStepClass());
-        }
-        builder.addStep(step);
-
-        flow = builder.create();
-
-        wizard.onChanged();
     }
 
     @Override
