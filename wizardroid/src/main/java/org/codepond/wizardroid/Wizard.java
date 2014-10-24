@@ -60,10 +60,16 @@ public class Wizard {
                   final WizardCallbacks callbacks,
                   final FragmentActivity activity,
                   final FragmentManager fmanager) {
-		this.wizardFlow = wizardFlow;
+        this.wizardFlow = wizardFlow;
         this.contextManager = contextManager;
         this.callbacks = callbacks;
         this.mPager = (ViewPager) activity.findViewById(R.id.step_container);
+        this.mPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+            @Override
+            public void onPageSelected(int i) {
+                ((WizardPagerAdapter)mPager.getAdapter()).getPrimaryItem().setUserVisibleHint(true);
+            }
+        });
         this.mFragmentManager = fmanager;
 
         if (mPager == null) {
@@ -72,6 +78,7 @@ public class Wizard {
         }
 
         mPager.setAdapter(new WizardPagerAdapter(fmanager));
+        mPager.setOffscreenPageLimit(1);
 
         backStackEntryCount = mFragmentManager.getBackStackEntryCount();
         mFragmentManager.addOnBackStackChangedListener(new OnBackStackChangedListener() {
@@ -80,7 +87,7 @@ public class Wizard {
                 backStackEntryCount = mFragmentManager.getBackStackEntryCount();
 
                 //onBackPressed
-                if (backStackEntryCount < getCurrentStepPosition()){
+                if (backStackEntryCount < getCurrentStepPosition()) {
                     mPager.setCurrentItem(getCurrentStepPosition() - 1);
                 }
             }
@@ -110,8 +117,7 @@ public class Wizard {
                         //Sliding right
                         goNext();
                         fingerSlide = true;
-                    }
-                    else if (positionOffset < initialOffset){
+                    } else if (positionOffset < initialOffset) {
                         //Sliding left
                         goBack();
                         fingerSlide = true;
@@ -122,10 +128,9 @@ public class Wizard {
             @Override
             public void onPageSelected(int position) {
                 //Signal that the page is now "selected"
-                if (backStackEntryCount < position){
+                if (backStackEntryCount < position) {
                     mFragmentManager.beginTransaction().addToBackStack(null).commit();
-                }
-                else if (backStackEntryCount > position){
+                } else if (backStackEntryCount > position) {
                     mFragmentManager.popBackStack();
                 }
                 consumedPageSelectedEvent = true;
@@ -142,7 +147,7 @@ public class Wizard {
 
             }
         });
-	}
+    }
 
     public void addStep(Class<? extends WizardStep> step, boolean required) {
         final WizardFlow.StepMetaData metadata = new WizardFlow.StepMetaData(required, step);
