@@ -1,10 +1,7 @@
 package org.codepond.wizardroid;
 
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
+import android.support.v4.app.*;
 import android.support.v4.app.FragmentManager.OnBackStackChangedListener;
-import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.ViewGroup;
 
@@ -41,11 +38,13 @@ public class Wizard {
 	private WizardFlow wizardFlow;
     private final ContextManager contextManager;
     private final WizardCallbacks callbacks;
-    private final ViewPager mPager;
     private final FragmentManager mFragmentManager;
 
     private boolean fingerSlide;
     private int backStackEntryCount;
+
+    private int position;
+    private WizardStep stepStepStep;
 
 
     /**
@@ -63,90 +62,8 @@ public class Wizard {
         this.wizardFlow = wizardFlow;
         this.contextManager = contextManager;
         this.callbacks = callbacks;
-        this.mPager = (ViewPager) activity.findViewById(R.id.step_container);
-        this.mPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
-            @Override
-            public void onPageSelected(int i) {
-                ((WizardPagerAdapter)mPager.getAdapter()).getPrimaryItem().setUserVisibleHint(true);
-            }
-        });
+
         this.mFragmentManager = fmanager;
-
-        if (mPager == null) {
-            throw new RuntimeException("Cannot initialize Wizard. View with ID: step_container not found!" +
-                    " The hosting Activity/Fragment must have a ViewPager in its layout with ID: step_container");
-        }
-
-        mPager.setAdapter(new WizardPagerAdapter(fmanager));
-        mPager.setOffscreenPageLimit(1);
-
-        backStackEntryCount = mFragmentManager.getBackStackEntryCount();
-        mFragmentManager.addOnBackStackChangedListener(new OnBackStackChangedListener() {
-            @Override
-            public void onBackStackChanged() {
-                backStackEntryCount = mFragmentManager.getBackStackEntryCount();
-
-                //onBackPressed
-                if (backStackEntryCount < getCurrentStepPosition()) {
-                    mPager.setCurrentItem(getCurrentStepPosition() - 1);
-                }
-            }
-        });
-
-        //Implementation of OnPageChangeListener to handle wizard control via user finger slides
-        mPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-
-            private boolean initialOffsetIsSet;
-            private float initialOffset;
-            private boolean consumedPageSelectedEvent;
-
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                //Check if the page started to be dragged by the user
-                //and avoid positionOffset 0
-                if (!initialOffsetIsSet && positionOffset > 0) {
-                    //Store the initialOffset for later comparison
-                    initialOffset = positionOffset;
-                    //Signal that initial offset has been set for the current page drag sequence
-                    initialOffsetIsSet = true;
-                }
-                //Check slide direction and decide if to call goNext() or goBack()
-                //Once page is "selected" (visible to the user)), skip checking slide direction
-                if (!consumedPageSelectedEvent && positionOffset > 0) {
-                    if (positionOffset > initialOffset) {
-                        //Sliding right
-                        goNext();
-                        fingerSlide = true;
-                    } else if (positionOffset < initialOffset) {
-                        //Sliding left
-                        goBack();
-                        fingerSlide = true;
-                    }
-                }
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-                //Signal that the page is now "selected"
-                if (backStackEntryCount < position) {
-                    mFragmentManager.beginTransaction().addToBackStack(null).commit();
-                } else if (backStackEntryCount > position) {
-                    mFragmentManager.popBackStack();
-                }
-                consumedPageSelectedEvent = true;
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-                if (state == ViewPager.SCROLL_STATE_IDLE) {
-                    //No animation is on going, reset flags
-                    consumedPageSelectedEvent = false;
-                    initialOffsetIsSet = false;
-                    fingerSlide = false;
-                }
-
-            }
-        });
     }
 
     public void addStep(Class<? extends WizardStep> step, boolean required) {
@@ -156,25 +73,25 @@ public class Wizard {
     }
 
     public void retract() {
-        final Class<? extends WizardStep> currentActive =
+        /*final Class<? extends WizardStep> currentActive =
                 ((WizardPagerAdapter)mPager.getAdapter()).getPrimaryItem().getClass();
 
-        retract(currentActive);
+        retract(currentActive);*/
     }
 
     public void retract(Class<? extends WizardStep> step) {
-        final Iterator<WizardFlow.StepMetaData> iterator = wizardFlow.steps.descendingIterator();
+        /*final Iterator<WizardFlow.StepMetaData> iterator = wizardFlow.steps.descendingIterator();
 
         WizardFlow.StepMetaData next;
         while(!(step.equals((next = iterator.next()).getStepClass())))
-            wizardFlow.steps.remove(next);
+            wizardFlow.steps.remove(next);*/
     }
 
     public void onChanged() {
         //Refresh the UI
         callbacks.onStepChanged();
 
-        mPager.getAdapter().notifyDataSetChanged();
+        //mPager.getAdapter().notifyDataSetChanged();
     }
 
     public void onStepCompleted(boolean isComplete) {
@@ -196,18 +113,14 @@ public class Wizard {
             getCurrentStep().onExit(WizardStep.EXIT_NEXT);
             contextManager.persistStepContext(getCurrentStep());
             //Tell the ViewPager to re-create the fragments, causing it to bind step context
-            mPager.getAdapter().notifyDataSetChanged();
+            //mPager.getAdapter().notifyDataSetChanged();
 
             if (isLastStep()) {
                 callbacks.onWizardComplete();
             }
             else {
-                //Check if the user dragged the page or pressed a button.
-                //If the page was dragged then the ViewPager will handle the current step.
-                //Otherwise, set the current step programmatically.
-                if (!fingerSlide) {
-                    setCurrentStep(mPager.getCurrentItem() + 1);
-                }
+                setCurrentStep(getCurrentStepPosition() + 1);
+
                 //Notify the hosting Fragment/Activity that the step has changed so it might want to update the controls accordingly
                 callbacks.onStepChanged();
             }
@@ -224,7 +137,7 @@ public class Wizard {
             //If the page was dragged then the ViewPager will handle the current step.
             //Otherwise, set the current step programmatically.
             if (!fingerSlide) {
-                setCurrentStep(mPager.getCurrentItem() - 1);
+                setCurrentStep(getCurrentStepPosition() - 1);
             }
             //Notify the hosting Fragment/Activity that the step has changed so it might want to update the controls accordingly
             callbacks.onStepChanged();
@@ -236,15 +149,27 @@ public class Wizard {
 	 * @param stepPosition the position of the step within the WizardFlow
 	 */
 	public void setCurrentStep(int stepPosition) {
-        mPager.setCurrentItem(stepPosition);
-	}
+        try {
+            this.position = stepPosition;
+            stepStepStep = wizardFlow.steps.get(position).getStepClass().newInstance();
+            mFragmentManager.beginTransaction()
+                    .replace(android.R.id.content, stepStepStep)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit();
+            mFragmentManager.executePendingTransactions();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
 	
 	/**
 	 * Gets the current step position
 	 * @return integer representing the position of the step in the WizardFlow
 	 */
     public int getCurrentStepPosition() {
-		return mPager.getCurrentItem();
+		return position;
 	}
 	
 	/**
@@ -252,7 +177,7 @@ public class Wizard {
 	 * @return WizardStep the current WizardStep instance
 	 */
     public WizardStep getCurrentStep() {
-        return ((WizardPagerAdapter)mPager.getAdapter()).getPrimaryItem();
+        return stepStepStep;
 	}
 	
 	/**
@@ -260,7 +185,7 @@ public class Wizard {
 	 * @return boolean representing the result of the check
 	 */
     public boolean isLastStep() {
-		return mPager.getCurrentItem() == wizardFlow.getStepsCount() - 1;
+		return position == wizardFlow.getStepsCount() - 1;
 	}
 	
 	/**
@@ -268,7 +193,7 @@ public class Wizard {
 	 * @return boolean representing the result of the check
 	 */
 	public boolean isFirstStep() {
-		return mPager.getCurrentItem() == 0;
+		return position == 0;
 	}
 
     /**
@@ -281,56 +206,5 @@ public class Wizard {
             return wizardFlow.isStepCompleted(stepPosition);
         }
         return true;
-    }
-
-    /**
-     * Custom adapter for the ViewPager
-     */
-    public class WizardPagerAdapter extends FragmentStatePagerAdapter {
-
-        private Fragment mPrimaryItem;
-
-        public WizardPagerAdapter(FragmentManager fm) {
-            super(fm);
-        }
-
-        @Override
-        public Fragment getItem(int i) {
-            try {
-                WizardStep step = wizardFlow.getSteps().get(i).newInstance();
-                contextManager.loadStepContext(step);
-                return step;
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        public void setPrimaryItem(ViewGroup container, int position, Object object) {
-            super.setPrimaryItem(container, position, object);
-            mPrimaryItem = (Fragment) object;
-        }
-
-        @Override
-        public int getItemPosition(Object object) {
-            if (object.equals(mPrimaryItem)) {
-                return POSITION_UNCHANGED;
-            }
-            else {
-                return POSITION_NONE;
-            }
-        }
-
-        @Override
-        public int getCount() {
-            return wizardFlow.getSteps().size();
-        }
-
-        public WizardStep getPrimaryItem() {
-            return (WizardStep) mPrimaryItem;
-        }
     }
 }
