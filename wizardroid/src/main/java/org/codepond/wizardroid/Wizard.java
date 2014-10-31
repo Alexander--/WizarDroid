@@ -7,6 +7,8 @@ import android.support.v4.view.ViewPager;
 
 import org.codepond.wizardroid.persistence.ContextManager;
 
+import java.util.Iterator;
+
 /**
  * The engine of the Wizard. This class controls the flow of the wizard
  * and is using {@link ViewPager} under the hood. You would normally want to
@@ -70,18 +72,14 @@ public class Wizard {
     }
 
     public void retract() {
-        /*final Class<? extends WizardStep> currentActive =
-                ((WizardPagerAdapter)mPager.getAdapter()).getPrimaryItem().getClass();
-
-        retract(currentActive);*/
+        retract(stepStepStep.getClass());
     }
 
     public void retract(Class<? extends WizardStep> step) {
-        /*final Iterator<WizardFlow.StepMetaData> iterator = wizardFlow.steps.descendingIterator();
+        final Iterator<WizardFlow.StepMetaData> iterator = wizardFlow.steps.descendingIterator();
 
-        WizardFlow.StepMetaData next;
-        while(!(step.equals((next = iterator.next()).getStepClass())))
-            wizardFlow.steps.remove(next);*/
+        while(!(step.equals(iterator.next().getStepClass())))
+            iterator.remove();
     }
 
     public void onChanged() {

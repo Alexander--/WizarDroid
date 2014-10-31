@@ -76,6 +76,8 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
      */
     @Override
     public void onStepChanged() {
+        contextManager.loadStepContext(this);
+
         // in order to hide software input method we need to authorize with window token from focused window
         // this code relies on (somewhat fragile) assumption, that the only window, that can hold
         // software keyboard focus during fragment switch, one with fragment itself.
