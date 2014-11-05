@@ -77,19 +77,10 @@ public abstract class WizardFragment extends Fragment implements Wizard.WizardCa
     @Override
     public void onStepChanged() {
         contextManager.loadStepContext(this);
-
-        // in order to hide software input method we need to authorize with window token from focused window
-        // this code relies on (somewhat fragile) assumption, that the only window, that can hold
-        // software keyboard focus during fragment switch, one with fragment itself.
-        final InputMethodManager mgr = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-
-        View focusedWindowChild = wizard.getCurrentStep().getView();
-        if (focusedWindowChild == null)
-            focusedWindowChild = getActivity().getCurrentFocus();
-        if (focusedWindowChild == null)
-            focusedWindowChild = new View(getActivity());
-        mgr.hideSoftInputFromWindow(focusedWindowChild.getWindowToken(), 0);
     }
+
+    @Override
+    public abstract void onStepSwitched(Class<? extends WizardStep> oldStep);
 
     /**
      * @return {@link Wizard}, associated with this fragment. Children fragments should not need to

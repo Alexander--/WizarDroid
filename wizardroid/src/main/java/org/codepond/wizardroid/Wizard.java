@@ -31,6 +31,8 @@ public class Wizard {
          * Event called after a step was changed
          */
         public void onStepChanged();
+
+        public void onStepSwitched(Class<? extends WizardStep> previousStep);
     }
 
     private static final String TAG = Wizard.class.getSimpleName();
@@ -114,9 +116,14 @@ public class Wizard {
                 callbacks.onWizardComplete();
             }
             else {
+                final Class<? extends WizardStep> oldStep = stepStepStep.getClass();
+
                 setCurrentStep(getCurrentStepPosition() + 1);
+
                 //Notify the hosting Fragment/Activity that the step has changed so it might want to update the controls accordingly
                 callbacks.onStepChanged();
+
+                callbacks.onStepSwitched(oldStep);
             }
 	    }
     }
