@@ -63,6 +63,14 @@ public abstract class WizardStep extends Fragment {
         }
     }
 
+    @Override
+    public void onDetach() {
+        if (!getActivity().isFinishing())
+            getWizard().storeContext();
+
+        super.onDetach();
+    }
+
     private void bindFields(Bundle args) {
         //Scan the step for fields annotated with @ContextVariable
         //and bind value if found in step's arguments

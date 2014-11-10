@@ -2,7 +2,6 @@ package org.codepond.wizardroid;
 
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 
 import org.codepond.wizardroid.persistence.ContextManager;
@@ -16,7 +15,25 @@ import java.util.Iterator;
  * via {@link org.codepond.wizardroid.WizardFragment#wizard} field. Use this
  * class only if you wish to create a custom WizardFragment to control the wizard.
  */
-public class Wizard {
+public class Wizard implements FragmentManager.OnBackStackChangedListener {
+    @Override
+    public void onBackStackChanged() {
+        backStackEntryCount = mFragmentManager.getBackStackEntryCount();
+
+        //onBackPressed
+        if (backStackEntryCount < getCurrentStepPosition()) {
+            this.position--;
+            contextManager.loadStepContext(stepStepStep);
+
+            callbacks.onStepChanged();
+            stepStepStep = (WizardStep) mFragmentManager.findFragmentById(R.id.step_container);
+        }
+    }
+
+    public void storeContext() {
+        contextManager.persistStepContext(getCurrentStep());
+    }
+
     /**
      * Interface for key wizard events. Implement this interface if you wish to create
      * a custom WizardFragment.
@@ -65,6 +82,9 @@ public class Wizard {
         this.callbacks = callbacks;
 
         this.mFragmentManager = fmanager;
+
+        backStackEntryCount = mFragmentManager.getBackStackEntryCount();
+        mFragmentManager.addOnBackStackChangedListener(this);
     }
 
     public void addStep(Class<? extends WizardStep> step, boolean required) {
@@ -108,7 +128,7 @@ public class Wizard {
         if (canGoNext()) {
             wizardFlow.setStepCompleted(getCurrentStepPosition(), true);
             getCurrentStep().onExit(WizardStep.EXIT_NEXT);
-            contextManager.persistStepContext(getCurrentStep());
+            storeContext();
             //Tell the ViewPager to re-create the fragments, causing it to bind step context
             //mPager.getAdapter().notifyDataSetChanged();
 
@@ -118,7 +138,7 @@ public class Wizard {
             else {
                 final Class<? extends WizardStep> oldStep = stepStepStep.getClass();
 
-                setCurrentStep(getCurrentStepPosition() + 1);
+                changeCurrentStep(getCurrentStepPosition() + 1);
 
                 //Notify the hosting Fragment/Activity that the step has changed so it might want to update the controls accordingly
                 callbacks.onStepChanged();
@@ -137,19 +157,18 @@ public class Wizard {
             //Check if the user dragged the page or pressed a button.
             //If the page was dragged then the ViewPager will handle the current step.
             //Otherwise, set the current step programmatically.
-            setCurrentStep(getCurrentStepPosition() - 1);
+            changeCurrentStep(getCurrentStepPosition() - 1);
 
             //Notify the hosting Fragment/Activity that the step has changed so it might want to update the controls accordingly
             callbacks.onStepChanged();
         }
 	}
-	
+
 	/**
 	 * Sets the current step of the wizard
 	 * @param stepPosition the position of the step within the WizardFlow
 	 */
-	public void setCurrentStep(int stepPosition) {
-        int fragmentTransactionAnimation = stepPosition > position ? FragmentTransaction.TRANSIT_FRAGMENT_OPEN : FragmentTransaction.TRANSIT_FRAGMENT_CLOSE;
+	public void changeCurrentStep(int stepPosition) {
         try {
             this.position = stepPosition;
             if (position != -1 && stepStepStep != null)
@@ -159,16 +178,13 @@ public class Wizard {
             contextManager.loadStepContext(stepStepStep);
 
             mFragmentManager.beginTransaction()
+                    .addToBackStack(null)
+                    .setCustomAnimations(R.anim.enter, R.anim.exit, R.anim.pop_enter, R.anim.pop_exit)
                     .replace(R.id.step_container, stepStepStep)
-                    .setTransition(fragmentTransactionAnimation)
                     .commit();
             mFragmentManager.executePendingTransactions();
-
-
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 	

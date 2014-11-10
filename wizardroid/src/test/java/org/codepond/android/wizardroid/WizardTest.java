@@ -77,7 +77,7 @@ public class WizardTest {
 
     @Test
     public void testBack_BackOneStep_StepPositionIsZero() {
-        wizard.setCurrentStep(1);
+        wizard.changeCurrentStep(1);
         int expectedStepPosition = 0;
 
         wizard.goBack();
