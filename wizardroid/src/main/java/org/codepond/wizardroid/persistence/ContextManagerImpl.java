@@ -76,7 +76,11 @@ public class ContextManagerImpl implements ContextManager {
             bindFields((WizardFragment)step, args);
         }
         else {
-            step.setArguments(args);
+            try {
+                step.setArguments(args);
+            } catch (IllegalStateException backStack) {
+                bindFields(step, args);
+            }
         }
     }
 
@@ -148,7 +152,7 @@ public class ContextManagerImpl implements ContextManager {
         this.context = context;
     }
 
-    private void bindFields(WizardFragment wizardFragment, Bundle args) {
+    private void bindFields(Fragment wizardFragment, Bundle args) {
         //Scan the step for fields annotated with @ContextVariable
         //and bind value if found in step's arguments
         Field[] fields = wizardFragment.getClass().getDeclaredFields();

@@ -21,12 +21,12 @@ public class Wizard implements FragmentManager.OnBackStackChangedListener {
         backStackEntryCount = mFragmentManager.getBackStackEntryCount();
 
         //onBackPressed
-        if (backStackEntryCount < getCurrentStepPosition()) {
-            this.position--;
-            contextManager.loadStepContext(stepStepStep);
-
-            callbacks.onStepChanged();
+        // TODO do not add the very first item to backStack
+        if (backStackEntryCount <= getCurrentStepPosition()) {
+            position--;
             stepStepStep = (WizardStep) mFragmentManager.findFragmentById(R.id.step_container);
+            //contextManager.loadStepContext(stepStepStep);
+            callbacks.onStepChanged();
         }
     }
 
@@ -117,8 +117,9 @@ public class Wizard implements FragmentManager.OnBackStackChangedListener {
         //Check if the step is already marked as completed/incomplete
         if (wizardFlow.isStepCompleted(stepPosition) != isComplete) {
             wizardFlow.setStepCompleted(stepPosition, isComplete);
-            onChanged();
         }
+
+        onChanged();
     }
 
     /**
@@ -157,10 +158,13 @@ public class Wizard implements FragmentManager.OnBackStackChangedListener {
             //Check if the user dragged the page or pressed a button.
             //If the page was dragged then the ViewPager will handle the current step.
             //Otherwise, set the current step programmatically.
-            changeCurrentStep(getCurrentStepPosition() - 1);
+            final Class<? extends WizardStep> oldStep = stepStepStep.getClass();
 
-            //Notify the hosting Fragment/Activity that the step has changed so it might want to update the controls accordingly
-            callbacks.onStepChanged();
+            if (position != 0 && stepStepStep != null)
+                contextManager.persistStepContext(stepStepStep);
+            callbacks.onStepSwitched(oldStep);
+
+            mFragmentManager.popBackStack();
         }
 	}
 

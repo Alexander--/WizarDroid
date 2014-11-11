@@ -13,27 +13,7 @@ import org.codepond.wizardroid.WizardStep;
 import org.codepond.wizardroid.persistence.ContextManager;
 import org.codepond.wizardroid.persistence.ContextManagerImpl;
 
-/**
- * Basic Wizard UI class with built-in layout.
- * The layout uses two buttons 'Next' and 'Back' to control the wizard. When the wizard
- * reaches the last step, the 'Next' button label will change to 'Finish'. The 'Back' button
- * is disabled on the first step. Extend this class if you wish to use a wizard with this built-in layout.
- * Otherwise, extend {@link WizardFragment} and implement a custom wizard layout.
- * Override {@link WizardFragment#onSetup()} to set up the wizard's flow
- * and optionally {@link WizardFragment#onWizardComplete()} to handle wizard's finish event.
- * Note that button labels are changeable by calling {@link #setNextButtonText(String)}, {@link #setBackButtonText(String)} and
- * {@link #setFinishButtonText(String)}.
-
- */
 public abstract class BasicWizardLayout extends WizardFragment implements View.OnClickListener {
-
-    private Button nextButton;
-    private Button previousButton;
-
-    private String nextButtonText;
-    private String finishButtonText;
-    private String backButtonText;
-
     /**
      * @param contextManager {@link ContextManager}, used to persist fragment's variables
      */
@@ -56,21 +36,7 @@ public abstract class BasicWizardLayout extends WizardFragment implements View.O
      */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View wizardLayout = inflater.inflate(R.layout.wizard, container, false);
-        nextButton = (Button) wizardLayout.findViewById(R.id.wizard_next_button);
-        nextButton.setOnClickListener(this);
-        nextButton.setText(getNextButtonLabel());
-        previousButton = (Button) wizardLayout.findViewById(R.id.wizard_previous_button);
-        previousButton.setOnClickListener(this);
-        previousButton.setText(getBackButtonLabel());
-
-        return wizardLayout;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        updateWizardControls();
+        return inflater.inflate(R.layout.wizard, container, false);
     }
 
     /**
@@ -102,15 +68,6 @@ public abstract class BasicWizardLayout extends WizardFragment implements View.O
         }
     }
 
-    /**
-     * Event triggered after a step was changed, updating the button labels accordingly
-     */
-    @Override
-    public void onStepChanged() {
-        super.onStepChanged();
-        updateWizardControls();
-    }
-
     @Override
     public void onStepSwitched(Class<? extends WizardStep> oldStep) {
         // in order to hide software input method we need to authorize with window token from focused window
@@ -124,70 +81,5 @@ public abstract class BasicWizardLayout extends WizardFragment implements View.O
         if (focusedWindowChild == null)
             focusedWindowChild = new View(getActivity());
         mgr.hideSoftInputFromWindow(focusedWindowChild.getWindowToken(), 0);
-    }
-
-    /**
-     * Updates the UI according to current step position
-     */
-    private void updateWizardControls() {
-        //Disable the back button in the first step
-        previousButton.setEnabled(!wizard.isFirstStep());
-
-        previousButton.setText(getBackButtonLabel());
-        //Disable the next button if the step is marked as 'required' and is incomplete
-        nextButton.setEnabled(wizard.canGoNext());
-
-        //Set different next button label based on the wizard position
-        nextButton.setText(wizard.isLastStep()
-                ? getFinishButtonText()
-                : getNextButtonLabel());
-    }
-
-    /**
-     * Get 'Next' button label
-     * @return Default label 'Next' or user defined label
-     */
-    public String getNextButtonLabel() {
-        return TextUtils.isEmpty(nextButtonText) ? getResources().getString(R.string.action_next) : nextButtonText;
-    }
-
-    /**
-     * Set 'Next' button label
-     * @param nextButtonText Label for the Next button
-     */
-    public void setNextButtonText(String nextButtonText) {
-        this.nextButtonText = nextButtonText;
-    }
-
-    /**
-     * Get 'Finish' button label. 'Finish' button appears at the last step.
-     * @return Default label 'Finish' or user defined label
-     */
-    public String getFinishButtonText() {
-        return TextUtils.isEmpty(finishButtonText) ? getResources().getString(R.string.action_finish) : finishButtonText;
-    }
-
-    /**
-     * Set 'Finish' button label
-     * @param finishButtonText    Label for the Finish button
-     */
-    public void setFinishButtonText(String finishButtonText) {
-        this.finishButtonText = finishButtonText;
-    }
-
-    /**
-     * Get 'Back' button label
-     * @return Default label 'Back' or user defined label
-     */
-    public String getBackButtonLabel() {
-        return TextUtils.isEmpty(backButtonText) ? getResources().getString(R.string.action_previous) : backButtonText;
-    }
-
-    /**
-     * Set 'Back' button label
-     * @param backButtonText Label for the Back button
-     */
-    public void setBackButtonText(String backButtonText) {
-        this.backButtonText = backButtonText;
     }
 }
