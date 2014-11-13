@@ -58,11 +58,9 @@ public class Wizard implements FragmentManager.OnBackStackChangedListener {
     private final WizardCallbacks callbacks;
     private final FragmentManager mFragmentManager;
 
-    private boolean fingerSlide;
-    private int backStackEntryCount;
-
-    private int position = -1;
-    private WizardStep stepStepStep;
+    private volatile int backStackEntryCount;
+    private volatile int position = -1;
+    private volatile WizardStep stepStepStep;
 
 
     /**
@@ -160,10 +158,8 @@ public class Wizard implements FragmentManager.OnBackStackChangedListener {
             //Otherwise, set the current step programmatically.
             final Class<? extends WizardStep> oldStep = stepStepStep.getClass();
 
-            if (position != 0 && stepStepStep != null)
-                contextManager.persistStepContext(stepStepStep);
+            contextManager.persistStepContext(stepStepStep);
             callbacks.onStepSwitched(oldStep);
-
             mFragmentManager.popBackStack();
         }
 	}
@@ -175,7 +171,8 @@ public class Wizard implements FragmentManager.OnBackStackChangedListener {
 	public void changeCurrentStep(int stepPosition) {
         try {
             this.position = stepPosition;
-            if (position != -1 && stepStepStep != null)
+
+            if (stepStepStep != null)
                 contextManager.persistStepContext(stepStepStep);
 
             stepStepStep = wizardFlow.steps.get(position).getStepClass().newInstance();
