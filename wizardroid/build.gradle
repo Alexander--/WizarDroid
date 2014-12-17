@@ -20,7 +20,7 @@ android {
 }
 
 dependencies {
-    compile project(':arsenalmedialib')
+    compile project(':external:arsenalmedialib')
     compile 'com.android.support:support-v4:21.+'
 }
 
